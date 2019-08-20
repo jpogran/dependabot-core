@@ -17,9 +17,15 @@ module Dependabot
           attr_reader :modules
 
           def load!(puppetfile_contents)
-            puppetfile = DSL.new(self)
             @modules = []
-            puppetfile.instance_eval(puppetfile_contents, PUPPETFILE_MONIKER)
+
+            if defined?(RubyVM::AbstractSyntaxTree)
+              parser = AST.new(self)
+              parser.parse(puppetfile_contents)
+            else
+              puppetfile = DSL.new(self)
+              puppetfile.instance_eval(puppetfile_contents, PUPPETFILE_MONIKER)
+            end
           end
 
           def add_module(name, args)
@@ -49,6 +55,58 @@ module Dependabot
               raise NoMethodError, format("Unknown method '%<method>s'", method: method)
             end
           end
+
+          class AST
+            def initialize(parent)
+              @parent = parent
+            end
+
+            def parse(puppetfile)
+              root = nil
+              begin
+                root = RubyVM::AbstractSyntaxTree.parse(puppetfile)
+              rescue NameError => e
+                raise "Cannot parse Puppetfile directly on Ruby version #{RUBY_VERSION}"
+              end
+              traverse(root)
+            end
+
+            def traverse(node)
+              begin
+                if node.type == :FCALL
+                  name = node.children.first
+                  args = node.children.last.children.map do |item|
+                    next if item.nil?
+
+                    case item.type
+                    when :HASH
+                      Hash[*item.children.first.children.compact.map {|n| n.children.first }]
+                    else
+                      item.children.first
+                    end
+                  end.compact
+
+                  case name
+                  when :mod
+                    @parent.add_module(args.shift, *args)
+                  when :forge, :moduledir
+                    # noop
+                  else
+                    # Should we log unexpected Ruby code?
+                  end
+                end
+
+                node.children.each do |n|
+                  next unless n.is_a? RubyVM::AbstractSyntaxTree::Node
+
+                  traverse(n)
+                end
+              rescue => e
+                puts e.message
+              end
+            end
+          end
+
         end
       end
     end
