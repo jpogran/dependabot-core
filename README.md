@@ -16,7 +16,8 @@ should give you the tools you need. A reference implementation is available
 
 Dependabot Core is a collection of packages for automating dependency updating
 in Ruby, JavaScript, Python, PHP, Elixir, Elm, Go, Rust, Java and
-.NET. It can also update git submodules, Docker files and Terraform files.
+.NET. It can also update git submodules, Docker files Terraform files, and
+Puppet modules listed in a Puppetfile.
 Highlights include:
 
 - Logic to check for the latest version of a dependency *that's resolvable given

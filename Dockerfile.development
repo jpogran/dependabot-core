@@ -83,6 +83,10 @@ RUN mkdir -p /home/dependabot/dependabot-core/bundler
 COPY bundler/Gemfile bundler/dependabot-bundler.gemspec /home/dependabot/dependabot-core/bundler/
 RUN cd bundler && bundle install
 
+RUN mkdir -p /home/dependabot/dependabot-core/puppet
+COPY puppet/Gemfile puppet/dependabot-puppet.gemspec /home/dependabot/dependabot-core/puppet/
+RUN cd puppet && bundle install
+
 RUN mkdir -p /home/dependabot/dependabot-core/omnibus
 COPY omnibus/Gemfile omnibus/dependabot-omnibus.gemspec /home/dependabot/dependabot-core/omnibus/
 RUN cd omnibus && bundle install
